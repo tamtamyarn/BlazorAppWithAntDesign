@@ -1,0 +1,135 @@
+﻿@page "/booklist"
+@using BlazorAppWithAntDesign.Shared.Entities
+@inject HttpClient Http
+
+<p><Button Type="primary" Block OnClick="@(()=>{ visibleAddModal = true; })">Add Book</Button></p>
+
+<Modal Title="@addBookModalTitle" Visible="@visibleAddModal" OnOk="@AddBook" OnCancel="@CloseAddModal">
+    <p><Text>Title</Text><Input Placeholder="Book Title" @bind-Value="@title" /></p>
+    <p><Text>Author</Text><Input Placeholder="Book Author" @bind-Value="@author" /></p>
+</Modal>
+
+@if (books == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+<Table DataSource="@books" @bind-PageSize="@pageSize">
+    <Column @bind-Field="@context.BookId" Sortable>
+        @context.BookId
+    </Column>
+    <Column @bind-Field="@context.Title" Sortable>
+        @context.Title
+    </Column>
+    <Column @bind-Field="@context.Author" Sortable>
+        @context.Author
+    </Column>
+    <ActionColumn>
+        <Button Type="primary" OnClick="@(()=> OpenUpdateModal(context.BookId, context.Title, context.Author))">Update</Button>
+    </ActionColumn>
+    <ActionColumn>
+        <Button Type="primary" Danger OnClick="() => OpenDeleteModal(context.BookId, context.Title, context.Author)">Delete</Button>
+    </ActionColumn>
+</Table>
+}
+
+<Modal Title="@updateBookModalTitle" Visible="@visibleUpdateModal" OnOk="@(() => UpdateBook(bookId))" OnCancel="@CloseUpdateModal">
+    <p><Text>ID</Text><Input Placeholder="Book ID" @bind-Value="@bookId" Disabled /></p>
+    <p><Text>Title</Text><Input Placeholder="Book Title" @bind-Value="@title" /></p>
+    <p><Text>Author</Text><Input Placeholder="Book Author" @bind-Value="@author" /></p>
+</Modal>
+
+<Modal Title="@deleteBookModalTitle" Visible="@visibleDeleteModal" OnOk="@(() => DeleteBook(bookId))" OnCancel="@CloseDeleteModal">
+    <p>Do you want to delete this book?</p>
+    <p><Text>ID</Text><Input Placeholder="Book ID" @bind-Value="@bookId" Disabled /></p>
+    <p><Text>Title</Text><Input Placeholder="Book Title" @bind-Value="@title" Disabled /></p>
+    <p><Text>Author</Text><Input Placeholder="Book Author" @bind-Value="@author" Disabled /></p>
+</Modal>
+
+@code {
+    private string addBookModalTitle = "New Book";
+
+    private string updateBookModalTitle = "Update Book";
+
+    private string deleteBookModalTitle = "Delete Book";
+
+    private bool visibleAddModal = false;
+
+    private bool visibleUpdateModal = false;
+
+    private bool visibleDeleteModal = false;
+
+    private Book[] books;
+
+    private string title;
+
+    private string author;
+
+    private int bookId;
+
+    private int pageSize = 5;
+
+    protected override async Task OnInitializedAsync()
+    {
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+    }
+
+    private async Task AddBook()
+    {
+        var book = new Book() { Title = title, Author = author };
+        await Http.PostAsJsonAsync<Book>("api/Books", book);
+        title = "";
+        author = "";
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+        visibleAddModal = false;
+    }
+
+    private void CloseAddModal()
+    {
+        visibleAddModal = false;
+    }
+
+    private void CloseUpdateModal()
+    {
+        visibleUpdateModal = false;
+    }
+
+    private void CloseDeleteModal()
+    {
+        visibleDeleteModal = false;
+    }
+
+    public async Task DeleteBook(int bookId)
+    {
+        await Http.DeleteAsync($"api/Books/{bookId}");
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+        visibleDeleteModal = false;
+    }
+
+    public async Task UpdateBook(int bookId)
+    {
+        var book = new Book() { BookId = bookId, Title = title, Author = author };
+        await Http.PutAsJsonAsync<Book>("api/Books", book);
+        title = "";
+        author = "";
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+        visibleUpdateModal = false;
+    }
+
+    public void OpenUpdateModal(int bookId, string title, string author)
+    {
+        this.bookId = bookId;
+        this.title = title;
+        this.author = author;
+        visibleUpdateModal = true;
+    }
+
+    public void OpenDeleteModal(int bookId, string title, string author)
+    {
+        this.bookId = bookId;
+        this.title = title;
+        this.author = author;
+        visibleDeleteModal = true;
+    }
+}
