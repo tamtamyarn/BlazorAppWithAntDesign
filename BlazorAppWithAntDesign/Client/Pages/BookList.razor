@@ -1,6 +1,18 @@
 ﻿@page "/booklist"
 @using BlazorAppWithAntDesign.Shared.Entities
 @inject HttpClient Http
+@using OneOf 
+
+<p>
+    <Text>Show</Text>
+    <Select DefaultValue=@("10") Style="width:120px" OnChange="OnChange" @bind-Value="@pageSizeString">
+        <SelectOption Value="10">10</SelectOption>
+        <SelectOption Value="30">30</SelectOption>
+        <SelectOption Value="50">50</SelectOption>
+        <SelectOption Value="2">2</SelectOption>
+    </Select>
+    <Text>entries</Text>
+</p>
 
 <p><Button Type="primary" Block OnClick="@(()=>{ visibleAddModal = true; })">Add Book</Button></p>
 
@@ -15,23 +27,23 @@
 }
 else
 {
-<Table DataSource="@books" @bind-PageSize="@pageSize">
-    <Column @bind-Field="@context.BookId" Sortable>
-        @context.BookId
-    </Column>
-    <Column @bind-Field="@context.Title" Sortable>
-        @context.Title
-    </Column>
-    <Column @bind-Field="@context.Author" Sortable>
-        @context.Author
-    </Column>
-    <ActionColumn>
-        <Button Type="primary" OnClick="@(()=> OpenUpdateModal(context.BookId, context.Title, context.Author))">Update</Button>
-    </ActionColumn>
-    <ActionColumn>
-        <Button Type="primary" Danger OnClick="() => OpenDeleteModal(context.BookId, context.Title, context.Author)">Delete</Button>
-    </ActionColumn>
-</Table>
+    <Table DataSource="@books" @bind-PageSize="@pageSize">
+        <Column @bind-Field="@context.BookId" Sortable>
+            @context.BookId
+        </Column>
+        <Column @bind-Field="@context.Title" Sortable>
+            @context.Title
+        </Column>
+        <Column @bind-Field="@context.Author" Sortable>
+            @context.Author
+        </Column>
+        <ActionColumn>
+            <Button Type="primary" OnClick="@(()=> OpenUpdateModal(context.BookId, context.Title, context.Author))">Update</Button>
+        </ActionColumn>
+        <ActionColumn>
+            <Button Type="primary" Danger OnClick="() => OpenDeleteModal(context.BookId, context.Title, context.Author)">Delete</Button>
+        </ActionColumn>
+    </Table>
 }
 
 <Modal Title="@updateBookModalTitle" Visible="@visibleUpdateModal" OnOk="@(() => UpdateBook(bookId))" OnCancel="@CloseUpdateModal">
@@ -68,7 +80,9 @@ else
 
     private int bookId;
 
-    private int pageSize = 5;
+    private int pageSize = 10;
+
+    private string pageSizeString;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,5 +145,12 @@ else
         this.title = title;
         this.author = author;
         visibleDeleteModal = true;
+    }
+
+    private void OnChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
+    {
+        Console.WriteLine($"selected: ${value.Value.ToString()}");
+        pageSize = int.Parse(pageSizeString);
+        this.StateHasChanged();
     }
 }
